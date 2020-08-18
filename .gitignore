@@ -3,3 +3,7 @@
 ################################################################################
 
 /.vs/GridMatchTest
+/CrossStitchPatternReader/.vs/CrossStitchPatternReader/v16
+/CrossStitchPatternReader/bin/x64/Debug
+/CrossStitchPatternReader/obj
+/CrossStitchPatternReader/packages
