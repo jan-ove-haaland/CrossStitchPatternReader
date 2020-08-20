@@ -92,8 +92,8 @@ namespace CrossStitchPatternReader
                         ok = false;
                 }
 
-                for (int j = 1; j < c.ca.Length; j++)
-                    CvInvoke.Line(imrgb, c.ca[j - 1], c.ca[j], col, ok ? 9 : 3);
+                //for (int j = 1; j < c.ca.Length; j++)
+                //    CvInvoke.Line(imrgb, c.ca[j - 1], c.ca[j], col, ok ? 9 : 3);
 
                 if (ok)
                     gridCells.Add(c);
@@ -139,6 +139,25 @@ namespace CrossStitchPatternReader
             gixr = (from c in gridCells select c.gi.X).Max() + 1;
             giyr = (from c in gridCells select c.gi.Y).Max() + 1;
 
+            var gridEst = new GridEstimator();
+            foreach (var c in gridCells)
+                gridEst.Add(c.gi, c.cpf);
+
+            gridEst.Process();
+            for (int Xi = 0; Xi < gixr; Xi++)
+            {
+                Point p1 = gridEst.GetP(Xi + 0.5f, 0.5f);
+                Point p2 = gridEst.GetP(Xi + 0.5f, giyr - 0.5f);
+                CvInvoke.Line(imrgb, p1, p2, new MCvScalar(0, 100, 255), 5);
+            }
+            for (int Yi = 0; Yi < giyr; Yi++)
+            {
+                Point p1 = gridEst.GetP(0.5f, Yi + 0.5f);
+                Point p2 = gridEst.GetP(gixr - 0.5f, Yi + 0.5f);
+                CvInvoke.Line(imrgb, p1, p2, new MCvScalar(0, 100, 255), 5);
+            }
+
+
             Cell[,] cg = new Cell[gixr, giyr];
             foreach (var c in gridCells)
                 cg[c.gi.X, c.gi.Y] = c;
@@ -150,7 +169,7 @@ namespace CrossStitchPatternReader
                     if (c == null) continue;
                     var col = colors[(xi + yi) % colors.Count];
                     double minR = c.sidelength / 2.25;
-                    CvInvoke.Circle(imrgb, c.cp, (int)minR, col, 4);
+                    //CvInvoke.Circle(imrgb, c.cp, (int)minR, col, 4);
                 }
 
             var sidesize = (int)(side_avg * 0.8);
@@ -205,7 +224,10 @@ namespace CrossStitchPatternReader
             new Emgu.CV.UI.ImageViewer(gridImage, "gridImage").Show(); // Allows zoom and pan
             //CvInvoke.Imshow("gridImage", gridImage);
             CvInvoke.Imshow("gridMatchImage", gridMatchImage);
-            CvInvoke.Imshow("work grid", imrgb);
+
+            new Emgu.CV.UI.ImageViewer(imrgb, "work grid").Show(); // Allows zoom and pan
+                                                                   //            CvInvoke.Imshow("work grid", imrgb);
+            CvInvoke.Imwrite("work grid.png", imrgb);
 
             while (CvInvoke.WaitKey(100) == -1)
                 ;
