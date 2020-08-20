@@ -13,7 +13,77 @@ using System.Threading.Tasks;
 
 namespace CrossStitchPatternReader
 {
+    class LineEstimator
+    {
+        Dictionary<Point, float> index2val = new Dictionary<Point, float>();
+        double[] r;
+
+        public void Add(Point gridIndex, float val)
+        {
+            index2val.Add(gridIndex, val);
+        }
+
+        public void Process()
+        {
+            // v =  a + bx + cy  + dx2 + exy + fy2
+
+            int N = index2val.Count;
+            double[][] fx = new double[N][];
+            double[] fy = new double[N];
+            int i = 0;
+
+            foreach (var e in index2val)
+            {
+                double x = e.Key.X;
+                double y = e.Key.Y;
+                double v = e.Value;
+
+                fy[i] = v;
+                fx[i++] = new double[] { 1, x, y, x*x, x*y, y*y };
+            }
+
+            r = MathNet.Numerics.Fit.MultiDim(fx, fy, false, MathNet.Numerics.LinearRegression.DirectRegressionMethod.Svd);
+        }
+
+        public double Get(float x, float y)
+        {
+            double val = r[0] + r[1] * x + r[2] * y + r[3] * x*x + r[4] * x*y + r[5] * y*y;
+            return val;
+        }
+
+    }
+
     class GridEstimator
+    {
+        LineEstimator lx = new LineEstimator();
+        LineEstimator ly = new LineEstimator();
+
+        public void Add(Point gridIndex, PointF pixelPos)
+        {
+            lx.Add(gridIndex, pixelPos.X);
+            ly.Add(gridIndex, pixelPos.Y);
+        }
+
+        public void Process()
+        {
+            lx.Process();
+            ly.Process();
+        }
+
+        public PointF Get(float Xi, float Yi)
+        {
+            double x = lx.Get(Xi, Yi);
+            double y = ly.Get(Xi, Yi);
+            return new PointF((float)x, (float)y);
+        }
+
+        public Point GetP(float Xi, float Yi)
+        {
+            var p = Get(Xi, Yi);
+            return new Point((int)Math.Round(p.X), (int)Math.Round(p.Y));
+        }
+    }
+    class SquareGridEstimator
     {
         Dictionary<Point, PointF> index2pixel = new Dictionary<Point, PointF>();
         double[] r;
